@@ -14,7 +14,7 @@ struct Player {
     int attack;
 
     int money;
-    int inventory[10];
+    string inventory[10];
 };
 
 // Funkce na přeměnu řetězce na malá písmena
@@ -27,9 +27,44 @@ string lower(string &input){
     return input;
 }
 
-// Funkce na budoucí bojování
-void fight(string entity, Player &player){
+// Funkce na budoucí bojování, příběh zatím není moc promyšlený a tak tu zatím nic není
+bool fight(string entity, Player &player){
+    if(entity == "1. monstrum"){
 
+    }
+}
+
+void shop(string* inv, int &money){
+    int pocet, akce;
+    for(int i=0; i<10; i++){if(inv[i]=="Nic"){pocet=i; break;}}
+
+    cout << "Vítejte v obchodě. Co si chcete koupit? \n";
+
+    while(akce != 1){
+        cout << "---- \n";
+        cout << "1) Opustit obchod; 2) Popis itemů; 3) Lékárna - 10 zlatých; \
+4) Elixír - 20 zlatých; 5) Nápoj náhody - 15 zlatých; 6) Magická koule - 25 zlatých \n";
+        switch(akce){
+            case 1:
+                break;
+            case 2:
+                cout << "Lékárna: Regeneruje 10 životů; Elixír: Zvyšuje útok; Nápoj náhody: \
+Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximální manu \n";
+                break;
+            case 3:
+                if(money >= 10){
+                    if(inventar(inv, money, money, "Lékárna") == 1){ // Money momentálně slouží jako placeholder
+                        money -= 10;
+                    }
+                } else{
+                    cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
+                }
+                break;
+            default:
+                cout << "Zadejte platné číslo \n";
+                break;
+        }
+    }
 }
 
 // Funkce na vstup do vesnice
@@ -44,8 +79,15 @@ void village(Player &player, int &money, int &health, int &max_health, int &mana
         cout << "Zvolte odpovídající číslo: ";
         cin >> town_choice;
 
-        if(town_choice == 3){inventar();}
+        if(town_choice == 1){return;}
+        else if(town_choice == 2){shop(player.inventory, player.money);}
+        else if(town_choice == 3){inventar(player.inventory, player.health, player.attack, "Nic");}
     }
+}
+
+// Funkce na neúspěšné ukončení hry
+void game_over(Player player){
+    cout << "Prohráli jste";
 }
 
 int main(){
@@ -83,7 +125,7 @@ Její speciální schopnosti vám také pomohou. \n Životy: 85; Škody: 15; Man
             cout << "Tato třída vám bude vyhovovat pokud chcete spolehlivé healovací schopnosti. \
 Má decentní útok i manu. Životy: 100; Škody: 18; Mana: 60 \n";
         } else {cout << "Vámi zadaná třída neexistuje, zkuste to znovu. \n --- \n"; continue;}
- 
+
         // Přiřazení hodnot k hráči
         player.max_health = Classes[choice][0];
         player.attack = Classes[choice][1];
@@ -102,6 +144,13 @@ pomocí vložení písmena 'I' místo dané akce. Ve vesnici to pak bude repreze
 po každé návštěvě vesnice, takže se tím moc nemusíme zabývat. \n";
 
     village(player, player.money, player.health, player.max_health, player.mana, player.max_mana, player.attack);
+
+    cout << "Teď když jste navštívili první vesnici, budete připraveni na první souboj. Nebojte, nebude to nic \
+těžkého. Čeká vás souboj s [jméno]. Toto monstrum je zajímavé svým vzhledem, nicméně moc škody nepáchá. \n";
+
+    if(fight("1. monstrum", player) == false){game_over(player); return 0;};
+
+    cout << "První souboj jste úspěšně zvládl, nyní se posuňme dál. \n";
 
     return 0;
 }

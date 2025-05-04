@@ -10,14 +10,12 @@ void usporadatInventar(string inventar[10], int pocet){
     }
 }
 
-void pridejPredmet(string inventar[], int &pocet, string item, string itemy[4]){
-    char check = 'N';
-    for(int i=0; i<5; i++){ if (item == itemy[i]){check = 'Y'; break;} }
-    if( check == 'Y' && pocet != 10){
+int pridejPredmet(string inventar[], int &pocet, string item){
+    if(pocet != 10){
         inventar[pocet] = item;
         pocet ++;
-    } else if(pocet == 10){ cout << "V inventáři máte moc itemů, zkuste něco nejdříve odebrat \n"; }
-    else {cout << "Item je neplatný, zkuste to znovu \n"; }
+        return 1;
+    } else if(pocet == 10){ cout << "V inventáři máte moc itemů, zkuste něco nejdříve odebrat \n"; return 0;}
 }
 
 void odeberPredmet(string inventar[], int &pocet, int poradi){
@@ -27,7 +25,6 @@ void odeberPredmet(string inventar[], int &pocet, int poradi){
         pocet--;
     } else {cout << "Neplatné pořadí, zkuste to znovu \n";}
 }
-
 
 // Následující funkce z nějakého důvodu nefunguje
 void pouzijPredmet(string inventar[], int&pocet, int &zivoty, int &utok, string vyber){
@@ -53,40 +50,36 @@ void vypisInventar(string inventar[], int pocet){
     cout << endl;
 }
 
-int inventar(){
-    string inventar[10], select;
-    int akce, pocet=0, zivoty, utok, select_int;
+
+int inventar(string* inv, int &zivoty, int &utok, string pridat){
+    string select;
+    int akce, pocet, select_int;
     bool running = true;
-    string itemy[4] = {"lékárna", "elixír", "otrava", "tajemný_svitek"};
+    for(int i=0; i<10; i++){if(inv[i] == "Nic"){pocet=i; break;}} // Zjišťování počet itemů v inventáři
+
+    if(pridat != "Nic"){return pridejPredmet(inv, pocet, pridat);}
 
     while(running){
         cout << "------------------------------------------------------------------------------------------------------------\n";
-        cout << "Co chcete udelat? 1 - pridat predmet; 2 - odebrat predmet; 3 - pouzit predmet; 4 - zobrazit inventar; 5 - ukoncit \n";
+        cout << "Co chcete udělat? 1 - Odebrat předmět; 2 - Použít předmět; 3 - Zobrazit inventář; 4 - Ukončit \n";
         cin >> akce;
 
         switch(akce){
             case 1:
-                cout << "Který předmět chcete přidat? \n";
-                for(string item : itemy){ cout << item << "  |  " ;}
-                cout << endl;
-                cin >> select;
-                pridejPredmet(inventar, pocet, select, itemy);
-                break;
-            case 2:
                 if(pocet <= 0){pocet = 0; cout << "V inventáři není nic, co byste mohli odstranit \n"; break;}
                 cout << "Zadejte pořadí itemu, který chcete odstranit (od 1); Aktuální počet itemů --> " << pocet << ": ";
                 cin >> select_int;
-                odeberPredmet(inventar, pocet, select_int);
+                odeberPredmet(inv, pocet, select_int);
                 break;
-            case 3:
+            case 2:
                 cout << "Zadejte jméno itemu, který chcete použít: ";
                 cin >> select;
-                pouzijPredmet(inventar, pocet, zivoty, utok, select);
+                pouzijPredmet(inv, pocet, zivoty, utok, select);
+                break;
+            case 3:
+                vypisInventar(inv, pocet);
                 break;
             case 4:
-                vypisInventar(inventar, pocet);
-                break;
-            case 5:
                 running = false;
                 break;
             default:
