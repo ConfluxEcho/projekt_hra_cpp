@@ -28,9 +28,29 @@ string lower(string &input){
 }
 
 // Funkce na budoucí bojování, příběh zatím není moc promyšlený a tak tu zatím nic není
-bool fight(string entity, Player &player){
-    if(entity == "1. monstrum"){
+int fight(string entity, Player &player, array<int, 2> stats, array<int, 5> abilities){
+    int choice;
+    int health = stats[0];
+    while (true){
+        // Akce hráče
+        cout << "-----";
+        cout << "Vaše životy: " << player.health << ", vaše mana: " << player.mana << endl;
+        cout << "Životy monstra: " << stats[0] << endl;
+        cout << "Jakou akci chcete udělat? \n 1) Zaútočit 2) Kouzlit 3) Použít item v inventáři 4) Utéct: ";
+        cin >> choice;
+        if(choice == 4){return 2;}
+        switch(choice){
+            case 1:
+                health -= player.attack;
+                cout << "Zaútočil jste na monstrum a ubral jste tomu " << player.attack << " životů.";
+                break;
+            case 2:
+                break; // Zatím nic
+            case 3:
+                break; // Zatím nic
+        }
 
+        // Akce monstra
     }
 }
 
@@ -94,13 +114,27 @@ int main(){
     Player player;
     string choice;
     char enter;
+    int status;
 
     // Inicializace tříd (classes) {Životy, Škody, Mana}
+    array<int, 3> warrior = {120, 20, 0};
+    array<int, 3> mage = {70, 10, 100};
+    array<int, 3> thief = {85, 15, 30};
+    array<int, 3> paladin = {100, 18, 60};
     unordered_map<string, array<int, 3> > Classes;
-    Classes["Válečník"] = {120, 20, 0};
-    Classes["Mág"] = {70, 10, 100};
-    Classes["Zloděj"] = {85, 15, 30};
-    Classes["Paladin"] = {100, 18, 60};
+    Classes["Válečník"] = warrior;
+    Classes["Mág"] = mage;
+    Classes["Zloděj"] = thief;
+    Classes["Paladin"] = paladin;
+
+
+    // Inicializace monster {Životy, Útok}
+    array<int, 2> krysa = {150, 5};
+    unordered_map<string, array<int, 2> > Monsters;
+    Monsters["Jeskynní krysa"] = krysa;
+
+    // Inicializace schopností monster
+    unordered_map<string, array<int, 5> > Monster_abilities;
 
     cout << """ Vítejte v teto skvělé RPG hře, kde budete objevovat vesnice, \
 bojovat proti monstrům, a bránit se proti bossům. Jako první si vyberte třídu. \
@@ -146,11 +180,22 @@ po každé návštěvě vesnice, takže se tím moc nemusíme zabývat. \n";
     village(player, player.money, player.health, player.max_health, player.mana, player.max_mana, player.attack);
 
     cout << "Teď když jste navštívili první vesnici, budete připraveni na první souboj. Nebojte, nebude to nic \
-těžkého. Čeká vás souboj s [jméno]. Toto monstrum je zajímavé svým vzhledem, nicméně moc škody nepáchá. \n";
+těžkého. Čeká vás souboj s jeskynní krysou. Toto monstrum je zajímavé svým vzhledem, nicméně moc škody nepáchá. \n";
 
-    if(fight("1. monstrum", player) == false){game_over(player); return 0;};
+    cout << "--------";
+    cout << "Už se stmívá a chcete se schovat před špatným počasím. Jdete proto do jeskyně, abyste \
+se tam do rána schovali. Bohužel nejste jediným stvořením, které se v jeskyni schovává. Pomocí pochodně \
+v jeskyni uděláte světlo a objeví se velká krysa. 'Zde už bydlím já, bez boje mě nevyženete!' \n";
+    cout << "----";
+    cout << "V boji máte na výběr z několika akcí. Můžete zaútočit, kouzlit, použít item v inventáři nebo \
+utéct z boje a vrátit se zpátky později. Monstra mají různé vlastnosti, avšak stále po vás budou útočit. \n";
 
-    cout << "První souboj jste úspěšně zvládl, nyní se posuňme dál. \n";
+    status = fight("Jeskynní krysa", player, Monsters["Jeskynní krysa"], Monster_abilities["Jeskynní krysa"]);
+    if(status == 0){game_over(player); return 0;}
+    else if(status == 1){ cout << "První souboj jste úspěšně zvládl, nyní se posuňme dál. \n"; }
+    else if(status == 2){}
+
+    
 
     return 0;
 }
