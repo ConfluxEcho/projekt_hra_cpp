@@ -10,12 +10,12 @@ void usporadatInventar(string inventar[10], int pocet){
     }
 }
 
-int pridejPredmet(string inventar[], int &pocet, string item){
+int pridejPredmet(string inventar[], int pocet, string item){
     if(pocet != 10){
         inventar[pocet] = item;
-        pocet ++;
         return 1;
-    } else if(pocet == 10){ cout << "V inventáři máte moc itemů, zkuste něco nejdříve odebrat \n"; return 0;}
+    } else if(pocet == 10){ cout << "V inventáři máte moc itemů, zkuste něco nejdříve odebrat \n"; }
+    return 0;
 }
 
 void odeberPredmet(string inventar[], int &pocet, int poradi){
@@ -26,21 +26,17 @@ void odeberPredmet(string inventar[], int &pocet, int poradi){
     } else {cout << "Neplatné pořadí, zkuste to znovu \n";}
 }
 
-// Následující funkce z nějakého důvodu nefunguje
-void pouzijPredmet(string inventar[], int&pocet, int &zivoty, int &utok, string vyber){
+// Následující funkce z nějakého důvodu nefunguje (pracuje se na tom)
+string pouzijPredmet(string inventar[], int pocet, int &zivoty, int &utok, string vyber){
     int idx = -1;
     for(int i = pocet-1; i>=0; i--){
         if (inventar[i] == vyber){idx = i; break;}
     }
-    if(idx == -1){cout << "Vámi uvedený item není v inventáři, zkuste to znovu \n";}
+    if(idx == -1){cout << "Vámi uvedený item není v inventáři, zkuste to znovu \n"; return "Nic"; }
     else {
-        if(vyber == "lékárna"){zivoty += 10;}
-        else if(vyber == "elixír"){utok += 5;}
-        else if(vyber == "otrava"){zivoty -= 10;}
-        else if(vyber == "tajemný_svitek"){/*Zatím nic*/}
         inventar[idx] = "Nic";
         usporadatInventar(inventar, pocet);
-        pocet --;
+        return vyber;
     }
 }
 
@@ -51,7 +47,7 @@ void vypisInventar(string inventar[], int pocet){
 }
 
 
-int inventar(string* inv, int &zivoty, int &utok, string pridat){
+int inventar(string* inv, int &zivoty, int &utok, string pridat, string &item){
     string select;
     int akce, pocet, select_int;
     bool running = true;
@@ -74,8 +70,10 @@ int inventar(string* inv, int &zivoty, int &utok, string pridat){
             case 2:
                 cout << "Zadejte jméno itemu, který chcete použít: ";
                 cin >> select;
-                pouzijPredmet(inv, pocet, zivoty, utok, select);
-                break;
+                select = pouzijPredmet(inv, pocet, zivoty, utok, select);
+                if (select == "Nic"){break;}
+                item = select;
+                return 1;
             case 3:
                 vypisInventar(inv, pocet);
                 break;
