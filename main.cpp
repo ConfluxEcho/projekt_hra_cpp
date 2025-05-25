@@ -29,6 +29,22 @@ string lower(string &input){
     return input;
 }
 
+// Funkce na používání itemů
+void stats_update(string item, Player player){
+    // Stats itemů {Životy, Útok, Mana, Max Mana}
+    unordered_map<string, array<int, 4> > items = {
+        {"lékárna", {10, 0, 0, 0}},
+        {"elixír", {0, 10, 0, 0}},
+        {"koule", {0, 0, 0, 15}}
+    };
+    if(item != "Placeholder"){
+        player.health += items[item][0];
+        player.attack += items[item][1];
+        player.mana += items[item][2];
+        player.max_mana += items[item][3];
+    }
+}
+
 // Funkce na budoucí bojování, příběh zatím není moc promyšlený a tak tu zatím nic není
 int fight(string entity, Player &player, array<int, 2> stats, vector<string> abilities){
     int choice;
@@ -37,7 +53,7 @@ int fight(string entity, Player &player, array<int, 2> stats, vector<string> abi
     int random_number;
     while (true){
         // Akce hráče
-        cout << "-----";
+        cout << "-----\n";
         cout << "Vaše životy: " << player.health << ", vaše mana: " << player.mana << endl;
         cout << "Životy monstra: " << stats[0] << endl;
         cout << "Jakou akci chcete udělat? \n 1) Zaútočit 2) Kouzlit 3) Použít item v inventáři 4) Utéct: ";
@@ -46,7 +62,7 @@ int fight(string entity, Player &player, array<int, 2> stats, vector<string> abi
         switch(choice){
             case 1:
                 health -= player.attack;
-                cout << "Zaútočil jste na monstrum a ubral jste tomu " << player.attack << " životů.";
+                cout << "Zaútočili jste na monstrum a ubrali jste tomu " << player.attack << " životů. \n";
                 break;
             case 2:
                 break; // Zatím nic
@@ -56,20 +72,25 @@ int fight(string entity, Player &player, array<int, 2> stats, vector<string> abi
 
         // Akce monstra na bázi náhodného čísla
         random_number = rand() % number_of_abilities + 1;
-        if(abilities[random_number] == "..."){
-            // ...
+        if(abilities[random_number] == "Normální útok"){
+            cout << "Monstrum útočí na hráče, hráč má o " << stats[1] << " HP méně. \n";
+            player.health -= stats[1]; continue;
+        }
+        if(abilities[random_number] == "Hodně slabý heal"){
+            cout << "Monstrum se healuje, monstrum má o 5 HP více. \n";
+            health += 5;
         }
     }
 }
 
-void shop(string* inv, int &money){
+void shop(string (&inv)[10], int money){
     int pocet, akce=0;
     string placeholder = "Placeholder";
-    for(int i=0; i<10; i++){if(inv[i]=="Nic"){pocet=i; break;}}
+    bool running = true;
 
     cout << "Vítejte v obchodě. Co si chcete koupit? \n";
 
-    while(akce != 1){
+    while(true){
         cout << "---- \n";
         cout << "1) Opustit obchod; 2) Popis itemů; 3) Lékárna - 10 zlatých; \
 4) Elixír - 20 zlatých; 5) Nápoj náhody - 15 zlatých; 6) Magická koule - 25 zlatých \n";
@@ -77,15 +98,42 @@ void shop(string* inv, int &money){
         cin >> akce;
         switch(akce){
             case 1:
-                break;
+                return;
             case 2:
                 cout << "Lékárna: Regeneruje 10 životů; Elixír: Zvyšuje útok o 10; Nápoj náhody: \
 Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximální manu o 15 \n";
                 break;
             case 3:
                 if(money >= 10){
-                    if(inventar(inv, money, money, "Lékárna", placeholder) == 1){ // Money momentálně slouží jako placeholder
+                    if(inventar(inv, money, money, "Lékárna", placeholder) == 1){ // Money slouží jako placeholder
                         money -= 10;
+                    }
+                } else{
+                    cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
+                }
+                break;
+            case 4:
+                if(money >= 20){
+                    if(inventar(inv, money, money, "Elixír", placeholder) == 1){ // Money slouží jako placeholder
+                        money -= 20;
+                    }
+                } else{
+                    cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
+                }
+                break;
+            case 5:
+                if(money >= 15){
+                    if(inventar(inv, money, money, "Nápoj náhody", placeholder) == 1){ // Money slouží jako placeholder
+                        money -= 15;
+                    }
+                } else{
+                    cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
+                }
+                break;
+            case 6:
+                if(money >= 25){
+                    if(inventar(inv, money, money, "Magická koule", placeholder) == 1){ // Money slouží jako placeholder
+                        money -= 25;
                     }
                 } else{
                     cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
@@ -101,7 +149,7 @@ Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximáln
 // Funkce na vstup do vesnice
 void village(Player &player){
     int town_choice = 0;
-    string placeholder = "Placeholder";
+    string use = "Placeholder"; // Který item použít, buď se přes funkci vrátí placeholder nebo reálný item
     while(town_choice != 1){
         cout << "--- \n";
         cout << "Peníze: " << player.money << "; Životy: " << player.health << "; Max životy: " << player.max_health << \
@@ -113,7 +161,10 @@ void village(Player &player){
 
         if(town_choice == 1){return;}
         else if(town_choice == 2){shop(player.inventory, player.money);}
-        else if(town_choice == 3){inventar(player.inventory, player.health, player.attack, "Nic", placeholder);}
+        else if(town_choice == 3){
+            inventar(player.inventory, player.health, player.attack, "Nic", use);
+            stats_update(use, player);
+        }
         else { cout << "Neplatný vstup, zkuste to znovu. \n"; }
     }
 }
@@ -131,38 +182,30 @@ int main(){
 
     srand(time(0)); // Inicializace generátoru
 
-    // Stats itemů {Životy, Útok, Mana}
-    array<int, 3> medkit = {10, 0, 0};
-    array<int, 3> elixir = {0, 10, 0};
-    array<int, 3> ball = {0, 0, 15};
-    unordered_map<string, array<int, 3> > items;
-    items["lékárna"] = medkit;
-    items["elixír"] = elixir;
-    items["koule"] = ball;
+    // Nastavení inventáře hráče, aby všechny jeho hodnoty byly "Nic" - potřebné pro zjišťování velikosti
+    for(int i=0; i<10; i++){player.inventory[i] = "Nic";}
 
     // Inicializace tříd (classes) {Životy, Škody, Mana}
-    array<int, 3> warrior = {120, 20, 0};
-    array<int, 3> mage = {70, 10, 100};
-    array<int, 3> thief = {85, 15, 30};
-    array<int, 3> paladin = {100, 18, 60};
-    unordered_map<string, array<int, 3> > Classes;
-    Classes["válečník"] = warrior;
-    Classes["mág"] = mage;
-    Classes["zloděj"] = thief;
-    Classes["paladin"] = paladin;
-
+    unordered_map<string, array<int, 3> > Classes = {
+        {"válečník", {120, 20, 0}},
+        {"mág", {70, 10, 100}},
+        {"zloděj", {85, 15, 30}},
+        {"paladin", {100, 18, 60}}
+    };
 
     // Inicializace monster {Životy, Útok}
-    array<int, 2> krysa = {150, 5};
-    unordered_map<string, array<int, 2> > Monsters;
-    Monsters["Jeskynní krysa"] = krysa;
+    unordered_map<string, array<int, 2> > Monsters = {
+        {"Jeskynní krysa", {150, 5}}
+    };
 
     // Inicializace schopností monster
-    unordered_map<string, vector<string> > Monster_abilities;
+    unordered_map<string, vector<string> > Monster_abilities = {
+        {"Jeskynní krysa", {"Normální útok, Hodně slabý heal"}}
+    };
 
     cout << """ Vítejte v teto skvělé RPG hře, kde budete objevovat vesnice, \
 bojovat proti monstrům, a bránit se proti bossům. Jako první si vyberte třídu. \
-Pro pokračování stiskněte klávesu Enter. """; // Pouze enter nefunguje, musí se zadat právě jedno písmeno (fix později)
+Pro pokračování zadejte jakékoliv písmeno. """;
     cin >> enter;
     while(true){
         cout << "---------- \n";

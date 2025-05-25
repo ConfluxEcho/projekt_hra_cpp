@@ -26,7 +26,6 @@ void odeberPredmet(string inventar[], int &pocet, int poradi){
     } else {cout << "Neplatné pořadí, zkuste to znovu \n";}
 }
 
-// Následující funkce z nějakého důvodu nefunguje (pracuje se na tom)
 string pouzijPredmet(string inventar[], int pocet, int &zivoty, int &utok, string vyber){
     int idx = -1;
     for(int i = pocet-1; i>=0; i--){
@@ -47,7 +46,7 @@ void vypisInventar(string inventar[], int pocet){
 }
 
 
-int inventar(string* inv, int &zivoty, int &utok, string pridat, string &item){
+int inventar(string (&inv)[10], int &zivoty, int &utok, string pridat, string &item){
     string select;
     int akce, pocet, select_int;
     bool running = true;
