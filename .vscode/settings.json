@@ -3,7 +3,9 @@
       "cpp": "g++ -std=c++17 -o main main.cpp && ./main"
     },
     "files.associations": {
-      "vector": "cpp"
+      "vector": "cpp",
+      "iostream": "cpp",
+      "array": "cpp"
     }
   }
   

@@ -14,12 +14,13 @@ struct Player {
     int max_mana;
     int mana;
     int attack;
+    int level;
 
     int money;
     string inventory[10];
 };
 
-// Funkce na přeměnu řetězce na malá písmena
+// Funkce na převod řetězce na malá písmena
 string lower(string &input){
     for(char &c : input){
         // static_cast<unsigned char> použito pro správné chování funkce tolower(), \
@@ -30,7 +31,7 @@ string lower(string &input){
 }
 
 // Funkce na používání itemů
-void stats_update(string item, Player player){
+void stats_update(string item, Player &player){
     // Stats itemů {Životy, Útok, Mana, Max Mana}
     unordered_map<string, array<int, 4> > items = {
         {"lékárna", {10, 0, 0, 0}},
@@ -43,35 +44,59 @@ void stats_update(string item, Player player){
         player.mana += items[item][2];
         player.max_mana += items[item][3];
     }
+    cout << "Úspěšně jste použili item \n";
 }
 
 // Funkce na budoucí bojování, příběh zatím není moc promyšlený a tak tu zatím nic není
 int fight(string entity, Player &player, array<int, 2> stats, vector<string> abilities){
+    string use; // Který item použít, buď se přes funkci vrátí placeholder nebo reálný item; Výběr kouzla
     int choice;
     int health = stats[0];
     int number_of_abilities = abilities.size();
     int random_number;
+
+    // Inicializace kouzel {Mana, Heal, Škody}
+    unordered_map<string, array<int, 3> > Spells = {
+        {"magický šíp", {5, 0, 10}},
+        {"lék", {5, 10, 0}}
+    };
+
     while (true){
         // Akce hráče
         cout << "-----\n";
         cout << "Vaše životy: " << player.health << ", vaše mana: " << player.mana << endl;
-        cout << "Životy monstra: " << stats[0] << endl;
-        cout << "Jakou akci chcete udělat? \n 1) Zaútočit 2) Kouzlit 3) Použít item v inventáři 4) Utéct: ";
+        cout << "Životy monstra: " << health << endl;
+        cout << "Jakou akci chcete udělat? \n 1) Zaútočit 2) Kouzlit 3) Použít item v inventáři: ";
         cin >> choice;
-        if(choice == 4){return 2;}
         switch(choice){
             case 1:
                 health -= player.attack;
                 cout << "Zaútočili jste na monstrum a ubrali jste tomu " << player.attack << " životů. \n";
                 break;
             case 2:
-                break; // Zatím nic
+                cout << "Které kouzlo chcete použít? Magický šíp; Lék \n";
+                cin.ignore(); // Odstranění jakéhokoliv whitespace
+                getline(cin, use);
+                lower(use);
+                try{
+                    if(player.mana >= Spells.at(use)[0]){
+                        player.mana -= Spells.at(use)[0];
+                        player.health += Spells.at(use)[1];
+                        health -= Spells.at(use)[2];
+                    } else{ cout << "Nemáte dostatek many \n"; }
+                } catch(const out_of_range &e){ cout << "Požadované kouzlo nebylo nalezeno \n"; }
+                break;
             case 3:
-                break; // Zatím nic
+                use = "Placeholder";
+                inventar(player.inventory, player.health, player.attack, "Nic", use);
+                stats_update(use, player);
+                break;
         }
 
+        if(health <= 0){return 1;}
+
         // Akce monstra na bázi náhodného čísla
-        random_number = rand() % number_of_abilities + 1;
+        random_number = rand() % number_of_abilities;
         if(abilities[random_number] == "Normální útok"){
             cout << "Monstrum útočí na hráče, hráč má o " << stats[1] << " HP méně. \n";
             player.health -= stats[1]; continue;
@@ -80,6 +105,8 @@ int fight(string entity, Player &player, array<int, 2> stats, vector<string> abi
             cout << "Monstrum se healuje, monstrum má o 5 HP více. \n";
             health += 5;
         }
+
+        if(player.health <= 0){return 0;}
     }
 }
 
@@ -105,8 +132,9 @@ Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximáln
                 break;
             case 3:
                 if(money >= 10){
-                    if(inventar(inv, money, money, "Lékárna", placeholder) == 1){ // Money slouží jako placeholder
+                    if(inventar(inv, money, money, "lékárna", placeholder) == 1){ // Money slouží jako placeholder
                         money -= 10;
+                        cout << "Úspěšně jste si zakoupili lékárnu. \n";
                     }
                 } else{
                     cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
@@ -114,8 +142,9 @@ Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximáln
                 break;
             case 4:
                 if(money >= 20){
-                    if(inventar(inv, money, money, "Elixír", placeholder) == 1){ // Money slouží jako placeholder
+                    if(inventar(inv, money, money, "elixír", placeholder) == 1){ // Money slouží jako placeholder
                         money -= 20;
+                        cout << "Úspěšně jste si zakoupili elixír. \n";
                     }
                 } else{
                     cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
@@ -123,8 +152,9 @@ Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximáln
                 break;
             case 5:
                 if(money >= 15){
-                    if(inventar(inv, money, money, "Nápoj náhody", placeholder) == 1){ // Money slouží jako placeholder
+                    if(inventar(inv, money, money, "nápoj náhody", placeholder) == 1){ // Money slouží jako placeholder
                         money -= 15;
+                        cout << "Úspěšně jste si zakoupili nápoj náhody. \n";
                     }
                 } else{
                     cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
@@ -132,8 +162,9 @@ Dává náhodný efekt (dobrý či špatný); Magická koule: Zvyšuje maximáln
                 break;
             case 6:
                 if(money >= 25){
-                    if(inventar(inv, money, money, "Magická koule", placeholder) == 1){ // Money slouží jako placeholder
+                    if(inventar(inv, money, money, "magická koule", placeholder) == 1){ // Money slouží jako placeholder
                         money -= 25;
+                        cout << "Úspěšně jste si zakoupili magickou kouli. \n";
                     }
                 } else{
                     cout << "Nemáte dostatek peněz, zkuste to znovu až budete trochu bohatší. \n";
@@ -171,7 +202,13 @@ void village(Player &player){
 
 // Funkce na neúspěšné ukončení hry
 void game_over(Player player){
-    cout << "Prohráli jste";
+    cout << "---------------------";
+    cout << "Prohráli jste \n";
+    cout << "Dosáhli jste " << player.level << " úrovně \n";
+    cout << "Měli jste: \n";
+    cout << player.money << " peněz" << endl;
+    cout << player.mana << " many" << endl;
+    cout << player.attack << " úrovně útoku" << endl;
 }
 
 int main(){
@@ -200,7 +237,7 @@ int main(){
 
     // Inicializace schopností monster
     unordered_map<string, vector<string> > Monster_abilities = {
-        {"Jeskynní krysa", {"Normální útok, Hodně slabý heal"}}
+        {"Jeskynní krysa", {"Normální útok", "Hodně slabý heal"}}
     };
 
     cout << """ Vítejte v teto skvělé RPG hře, kde budete objevovat vesnice, \
@@ -257,15 +294,12 @@ těžkého. Čeká vás souboj s jeskynní krysou. Toto monstrum je zajímavé s
 se tam do rána schovali. Bohužel nejste jediným stvořením, které se v jeskyni schovává. Pomocí pochodně \
 v jeskyni uděláte světlo a objeví se velká krysa. 'Zde už bydlím já, bez boje mě nevyženete!' \n";
     cout << "---- \n";
-    cout << "V boji máte na výběr z několika akcí. Můžete zaútočit, kouzlit, použít item v inventáři nebo \
-utéct z boje a vrátit se zpátky později. Monstra mají různé vlastnosti, avšak stále po vás budou útočit. \n";
+    cout << "V boji máte na výběr z několika akcí. Můžete zaútočit, kouzlit či použít item v inventáři. \
+Monstra mají různé vlastnosti, avšak stále po vás budou útočit. \n";
 
     status = fight("Jeskynní krysa", player, Monsters["Jeskynní krysa"], Monster_abilities["Jeskynní krysa"]);
     if(status == 0){game_over(player); return 0;}
     else if(status == 1){ cout << "První souboj jste úspěšně zvládl, nyní se posuňme dál. \n"; }
-    else if(status == 2){}
-
     
-
     return 0;
 }

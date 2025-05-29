@@ -28,7 +28,7 @@ void odeberPredmet(string inventar[], int &pocet, int poradi){
 
 string pouzijPredmet(string inventar[], int pocet, int &zivoty, int &utok, string vyber){
     int idx = -1;
-    for(int i = pocet-1; i>=0; i--){
+    for(int i = pocet-1; i>=0; i--){ // Zjišťování indexu itemu
         if (inventar[i] == vyber){idx = i; break;}
     }
     if(idx == -1){cout << "Vámi uvedený item není v inventáři, zkuste to znovu \n"; return "Nic"; }
@@ -67,7 +67,7 @@ int inventar(string (&inv)[10], int &zivoty, int &utok, string pridat, string &i
                 odeberPredmet(inv, pocet, select_int);
                 break;
             case 2:
-                cout << "Zadejte jméno itemu, který chcete použít: ";
+                cout << "Zadejte jméno itemu, který chcete použít (malými písmeny): ";
                 cin >> select;
                 select = pouzijPredmet(inv, pocet, zivoty, utok, select);
                 if (select == "Nic"){break;}
