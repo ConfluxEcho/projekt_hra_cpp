@@ -15,9 +15,12 @@ struct Player {
     int mana;
     int attack;
     int level;
+    int experience;
+    int number_of_abilities;
 
     int money;
     string inventory[10];
+    string abilities[5];
 };
 
 // Funkce na převod řetězce na malá písmena
@@ -51,46 +54,70 @@ void stats_update(string item, Player &player){
 int fight(string entity, Player &player, array<int, 2> stats, vector<string> abilities){
     string use; // Který item použít, buď se přes funkci vrátí placeholder nebo reálný item; Výběr kouzla
     int choice;
+    int damage = player.attack;
     int health = stats[0];
     int number_of_abilities = abilities.size();
     int random_number;
+    int temporary_heal=0, temporary_damage=0, temporary_lifesteal=0;
 
     // Inicializace kouzel {Mana, Heal, Škody}
-    unordered_map<string, array<int, 3> > Spells = {
+    unordered_map<string, array<int, 3> > actions = {
+        {"normální útok", {0, 0, player.attack}},
+        {"hodně slabý heal", {0, 5, 0}},
+        {"slabý heal", {0, 10, 0}},
         {"magický šíp", {5, 0, 10}},
-        {"lék", {5, 10, 0}}
+        {"silný heal", {10, 15, 0}},
+        {"hodně silný heal", {15, 20, 0}},
+        {"magický backstab", {10, 3, 20}},
+        {"% škody", {20, 0, 0}},
+        {"dočasný heal", {10, 0, 0}},
+        {"dočasný lifesteal", {20, 0, 0}},
+        {"dočasné zvýšení útoku", {15, 0, 0}}
     };
 
     while (true){
         // Akce hráče
+        if(temporary_heal > 0){player.health += temporary_heal; temporary_heal--;}
+        if(temporary_lifesteal>0){health -= 10; player.health += 10; temporary_lifesteal--;}
+        if(temporary_damage > 0){damage = player.attack + temporary_damage; temporary_damage--;}
         cout << "-----\n";
         cout << "Vaše životy: " << player.health << ", vaše mana: " << player.mana << endl;
         cout << "Životy monstra: " << health << endl;
-        cout << "Jakou akci chcete udělat? \n 1) Zaútočit 2) Kouzlit 3) Použít item v inventáři: ";
-        cin >> choice;
-        switch(choice){
-            case 1:
-                health -= player.attack;
-                cout << "Zaútočili jste na monstrum a ubrali jste tomu " << player.attack << " životů. \n";
-                break;
-            case 2:
-                cout << "Které kouzlo chcete použít? Magický šíp; Lék \n";
-                cin.ignore(); // Odstranění jakéhokoliv whitespace
-                getline(cin, use);
-                lower(use);
-                try{
-                    if(player.mana >= Spells.at(use)[0]){
-                        player.mana -= Spells.at(use)[0];
-                        player.health += Spells.at(use)[1];
-                        health -= Spells.at(use)[2];
-                    } else{ cout << "Nemáte dostatek many \n"; }
-                } catch(const out_of_range &e){ cout << "Požadované kouzlo nebylo nalezeno \n"; }
-                break;
-            case 3:
-                use = "Placeholder";
-                inventar(player.inventory, player.health, player.attack, "Nic", use);
-                stats_update(use, player);
-                break;
+        cout << "Jakou akci chcete udělat? \n";
+        for(int i=0; i<player.number_of_abilities; i++){cout << i+1 << ") " << player.abilities[i] << " ";}
+        cout << player.number_of_abilities+1 << ") Otevřít inventář \n";
+        do{ cout << "Zadejte odpovídající číslo: "; cin >> choice; } while(choice > -1 && choice <= player.number_of_abilities);
+
+        if(choice == player.number_of_abilities+1){
+            use = "Placeholder";
+            inventar(player.inventory, player.health, player.attack, "Nic", use);
+            stats_update(use, player);
+        }
+        else if(player.abilities[choice] == "Normální útok"){
+            health -= player.attack;
+            cout << "Zaútočili jste na monstrum a ubrali jste tomu " << player.attack << " životů. \n";
+        }
+        else if(player.abilities[choice] == "Hodně slabý heal" || player.abilities[choice] == "Slabý heal" \
+                || player.abilities[choice] == "Silný heal" || player.abilities[choice] == "Hodně silný heal"){
+            if(actions[player.abilities[choice]][0] >= player.mana){
+                player.mana -= actions[player.abilities[choice]][0];
+                player.health += actions["Hodně slabý heal"][1];
+                cout << "Použili jste heal a zvedly se vám životy o " << actions[player.abilities[choice]][1] << endl;
+            } else {cout << "Nemáte dostatek many na tuto akci. \n";}
+        }
+        else if(player.abilities[choice] == "Dočasné zvýšení útoku"){temporary_damage = 15; cout << "Dočasně jste navýšili svůj damage \n";}
+        else if(player.abilities[choice] == "Dočasný heal"){temporary_heal = 10; cout << "Dočasně se budete postupně healovat \n";}
+        else if(player.abilities[choice] == "Dočasný lifesteal"){temporary_lifesteal = 7; cout << "Dočasně budete mít lifesteal \n";}
+        else if(player.abilities[choice] == "% škody"){ health *= (1 - (player.attack / 100)); cout << "Ubrali jste monstru " << \
+                player.attack << "% škody a nyní má " << health << " životů. \n"; }
+        else{
+            if(actions[player.abilities[choice]][0] <= player.mana){
+                player.mana -= actions[player.abilities[choice]][0];
+                player.health += actions[player.abilities[choice]][1];
+                health -= actions[player.abilities[choice]][2];
+                cout << "Ubrali jste monstru " << actions[player.abilities[choice]][2] << "životů a \
+                získali jste pět " << actions[player.abilities[choice]][1] << " životů. \n";
+            } else{cout << "Nemáte dostatek many \n";}
         }
 
         if(health <= 0){return 1;}
@@ -222,12 +249,12 @@ int main(){
     // Nastavení inventáře hráče, aby všechny jeho hodnoty byly "Nic" - potřebné pro zjišťování velikosti
     for(int i=0; i<10; i++){player.inventory[i] = "Nic";}
 
-    // Inicializace tříd (classes) {Životy, Škody, Mana}
-    unordered_map<string, array<int, 3> > Classes = {
-        {"válečník", {120, 20, 0}},
-        {"mág", {70, 10, 100}},
-        {"zloděj", {85, 15, 30}},
-        {"paladin", {100, 18, 60}}
+    // Inicializace tříd (classes) {Životy, Škody, Mana, Počet schopností}
+    unordered_map<string, array<int, 4> > Classes = {
+        {"válečník", {120, 20, 0, 2}},
+        {"mág", {70, 10, 100, 5}},
+        {"zloděj", {85, 15, 30, 4}},
+        {"paladin", {100, 18, 60, 5}}
     };
 
     // Inicializace monster {Životy, Útok}
@@ -238,6 +265,13 @@ int main(){
     // Inicializace schopností monster
     unordered_map<string, vector<string> > Monster_abilities = {
         {"Jeskynní krysa", {"Normální útok", "Hodně slabý heal"}}
+    };
+
+    unordered_map<string, array<string, 5> > class_abilities = {
+        {"válečník", {"Normální útok", "Hodně slabý heal"}},
+        {"mág", {"Normální útok", "Magický šíp", "Silný heal", "Dočasné zvýšení útoku", "% škody"}},
+        {"zloděj", {"Normální útok", "Slabý heal", "Magický backstab", "Dočasný lifesteal"}},
+        {"paladin", {"Normální útok", "Slabý heal", "Silný heal", "Hodně silný heal", "Dočasný heal"}}
     };
 
     cout << """ Vítejte v teto skvělé RPG hře, kde budete objevovat vesnice, \
@@ -272,6 +306,7 @@ Má decentní útok i manu. Životy: 100; Škody: 18; Mana: 60 \n";
         player.max_mana = Classes[choice][2];
         player.mana = player.max_mana;
         player.money = 20;
+        for(int i=0; i<5; i++){player.abilities[i] = class_abilities[choice][i];}
         cout << "--- \n";
         cout << "Chcete si opravdu vybrat tuto třídu? (Ano/Ne): ";
         cin >>  choice;
