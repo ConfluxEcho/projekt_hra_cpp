@@ -344,12 +344,12 @@ Houslista je ze svých rozbitých houslích v depresích a tak na 1 tah nic ned�
             } else if(i==2 && abilities2[random_number] == "Výstřel revolverem"){
                 cout << "Lupič se pokouší vystřelit z revolveru - jen jedna z komor obsahuje náboj. \n";
                 random_number = rand() % 6 + 1;
-                if(random_number = 1){
+                if(random_number == 1){
                     player.health -= 40; player_stun = 1;
                     temporary_stun1 = 2;
                     cout << "Lupič vystřelil ze správné komory! Hráč přichází o 40 životů a je omráčen na 1 tah. Druhý lupič je \
 také omráčen, a to na 2 tahy. \n";
-                } else {"Lupičovi se nepodařilo vystřelit. Náboj byl v jiné komoře. \n";}
+                } else {cout << "Lupičovi se nepodařilo vystřelit. Náboj byl v jiné komoře. \n";}
             } else if((i==1 && abilities1[random_number] == "Krádež") || (i==2 && abilities2[random_number] == "Krádež")){
                 if(inventar(player, "Krádež") == 1){ cout << "Lupič vám ukradl item z inventáře \n"; }
                 else{
@@ -619,6 +619,15 @@ int miniboss(Player &player, unordered_map<string, array<int, 3> > actions, arra
         wait(speed * 1);
         if(player.health <= 0){return 0;}
 
+        setColor("Cyan");
+        if(temporary_heal > 0){player.health += temporary_heal; temporary_heal--;
+            cout << "Z dočasného healu jste dostali " << temporary_heal+1 << " životů. \n";}
+        if(temporary_lifesteal>0){mb_health -= 5; player.health += 5; \
+        temporary_lifesteal--; cout << "Z dočasného lifestealu jste minibossu ubrali 5 životů a získali tím 5 životů. \n";}
+        if(temporary_damage > 0){damage = player.attack + temporary_damage; temporary_damage-=5;
+            cout << "Díky dočasnému zvýšení útoku nyní děláte " << temporary_damage+5+player.attack << " škody. \n";}
+        if (player.health > player.max_health){player.health = player.max_health;}
+        wait(speed * 1);
         setColor("Yellow");
         if(immunity>0){setColor("Yellow"); cout << "Miniboss má dočasnou imunitu. \n";}
         setColor("Green");
@@ -627,7 +636,7 @@ int miniboss(Player &player, unordered_map<string, array<int, 3> > actions, arra
         cout << "Životy minibosse: " << mb_health << endl;
         if(player_stun <= 0){
             for(int i=1; i<=player.number_of_abilities; i++){cout << i << ") " << player.abilities[i-1] << " ";} cout << player.number_of_abilities+1 << ") Inventář \n";
-            setColor("Black"); do{cout << "Jakou akci chcete udělat? "; cin >> choice;} while(choice < 1 || choice > player.number_of_abilities+1);
+            setColor("Black"); do{cout << "Jakou akci chcete udělat? "; get_int(choice);} while(choice < 1 || choice > player.number_of_abilities+1);
             choice--;
         } else{choice = -1; setColor("Yellow"); player_stun--; cout << "Hráč je omráčen, toto kolo proto vynecháváte. \n";}
         setColor("Cyan");
@@ -670,7 +679,7 @@ int miniboss(Player &player, unordered_map<string, array<int, 3> > actions, arra
                 if(actions[player.abilities[choice]][0] <= player.mana){
                     player.mana -= actions[player.abilities[choice]][0];
                     mb_health *= (1 - float(damage) / 100);
-                    cout << "Ubrali jste minibossu " << float(damage)/100 << "% životů. \n";
+                    cout << "Ubrali jste minibossu " << float(damage) << "% životů. \n";
                 } else{setColor("Yellow"); cout << "Nemáte dostatek many. \n";}
             } else{
                 if(actions[player.abilities[choice]][0] <= player.mana){
@@ -687,6 +696,228 @@ získali jste " << actions[player.abilities[choice]][1] << " životů. \n";
         if(immunity>0){immunity--;}
 
         if(mb_health <= 0){return 1;}
+        wait(speed * 1);
+    }
+}
+
+int bossfight(Player &player, unordered_map<string, array<int, 3> > actions, int speed){
+    int boss_health = 300;
+    int boss_attack = 5;
+    int blooms = 1;
+    bool activation = false, aggressive = false;
+    int lastAttack = 3;
+    int random_number;
+    int number_of_attacks=0, bloomHP=0, spell_immunity=0, player_stun=0, burst_hit=0;
+
+    int damage=player.attack, temporary_lifesteal=0, temporary_damage=0, temporary_heal=0;
+    int choice, number_of_choices;
+
+    vector<string> abilities = {"Stun", "Lifesteal", "Parazit", "Obrana", "Výstřel trnů", "Posilování", "Bloom damage"};
+
+    setColor("Red");
+    cout << "--------FINÁLNÍ SOUBOJ---------\n";
+    wait(speed * 1);
+    setColor("White");
+    cout << "Květina se zatím zdá být v klidu, ale najednou slyšíte ozvěnu 'Mé jméno je Bloomshade'. Nevíte, co si o tom myslet, \
+ale asi to nebude úplně jednoduchý boj. \n";
+    wait(speed * 1);
+    setColor("Yellow");
+    cout << "Tip: Čím více budete útočit, tím více se kytka stává agresivní. \n";
+    cout << "Tip: Pokud chcete kytku uklidnit, zkuste pár tahů neútočit. \n";
+    wait(speed * 2);
+
+    while(true){
+        setColor("Red");
+        cout << "-------------------\n";
+        // Akce bosse
+        setColor("Blue");
+        if(activation == false && lastAttack == 0){
+            activation = true;
+            aggressive = true;
+            cout << "Kytka vzrostla, nyní má dvojnásobnou výšku, co hráč. Asi bude bojovat zpět. \n";
+            wait(speed * 1);
+        }
+        if(activation == false){ cout << "Kytka se nezdá, že by něco dělala. \n"; }
+        else{
+            cout << "Bloomshade ze svých květů dělá pasivní damage, hráčovi ubírá " << boss_attack << " životů. \n";
+            if(aggressive == false && lastAttack == 0){
+                aggressive = true;
+                cout << "Kytka vzrostla, nyní má dvojnásobnou výšku, co hráč. Asi bude bojovat zpět. \n";
+                wait(speed * 1);
+            }
+            if(lastAttack > 2){aggressive = false;}
+            else if(lastAttack == 2){aggressive = false; cout << "Bloomshade se zklidnil, počet květů a škody je nižší. \n"; boss_attack = 5; blooms = 1;}
+            else{aggressive = true;}
+            if(aggressive == true){
+                blooms *= 2; boss_attack += 5;
+                setColor("Yellow");
+                cout << "-----\n";
+                cout << "Narůstají květy a damage bosse \n";
+                cout << "Počet květů: " << blooms << "; Attack bosse: " << boss_attack << endl;
+
+                setColor("Blue");
+                random_number = rand() % abilities.size();
+                
+                if(abilities[random_number] == "Stun"){
+                    player_stun = 1; player.health -= 2;
+                    cout << "Bloomshade hráče obrosty svými listy a kořeny. Hráč se na jedno kolo nemůže hnout, nemůže tedy \
+provádět žádné akce. Hráč také ztrácí 2 životy. \n";
+                }
+                else if(abilities[random_number] == "Lifesteal"){
+                    player.health -= 10; boss_health += 10;
+                    player.attack -= 1; boss_attack += 1; damage = player.attack + temporary_damage;
+                    cout << "Bloomshade si pomocí kořenů od hráče vzal 10 životů a 1 útok. \n";
+                }
+                else if(abilities[random_number] == "Parazit"){
+                    bloomHP += 10; boss_health -= 10;
+                    cout << "Bloomshade oživuje malý květ na hráčovi, přidává mu 10 životů. Tyto životy jsou odečteny od jeho životů. \n";
+                }
+                else if(abilities[random_number] == "Obrana"){
+                    spell_immunity = 3;
+                    cout << "Bloomshade se obalí v pylu a zakazuje všechny akce vyžadující manu na 3 kola. \n";
+                }
+                else if(abilities[random_number] == "Výstřel trnů"){
+                    for(int i=0; i<6; i++){
+                        random_number = rand() % 4;
+                        if (random_number == 1){
+                            player.health -= 5;
+                            burst_hit++;
+                        }
+                    }
+                    cout << "Bloomshade vystřeluje trny jako ze samopalu. Z 6 trnů jich " << burst_hit << " úspěšně trefí a hráč \
+dostává " << burst_hit * 5 << " škody. \n";
+                    burst_hit=0;
+                }
+                else if(abilities[random_number] == "Posilování"){
+                    random_number = rand() % 4;
+                    if(random_number == 3){
+                        boss_attack += number_of_attacks * 3;
+                        cout << "Bloomshade posiluje svůj attack, za každý hráčův tah, kdy zaútočil, si přidává 3 útoku. Celkem \
+tedy +" << number_of_attacks * 3 << "útoku. \n";
+                    }
+                    else{
+                        boss_attack -= 5; damage += 5;
+                        cout << "Bloomshade se neúspěšně pokusil o posilování útoku. Hráčovi předává 5 útoku. \n";
+                    }
+                }
+                else if(abilities[random_number] == "Bloom damage"){
+                    player.health -= blooms;
+                    cout << "Bloomshade vysílá své květy do útoku! Za každý květ hráč ztrácí 1 život (Dohromady " << blooms << " životů). \n";
+                }
+            }
+        }
+
+        if(player.health <= 0){return 0;}
+
+        wait(speed * 1);
+        setColor("White");
+        cout << "\n------HRÁČŮV TAH-------\n\n";
+        wait(speed * 1);
+
+        if(bloomHP > 0){
+            player.attack -= 2; boss_attack += 2; damage = player.attack + temporary_damage;
+            setColor("Blue");
+            cout << "Malý květ parazitující na hráčovi vám ubral 2 útoky a přidal je k Bloomshade. \n";
+            setColor("Yellow");
+            cout << "Malý květ HP: " << bloomHP << endl;
+            wait(speed * 1);
+        }
+
+        lastAttack++;
+        // Akce hráče
+        setColor("Cyan");
+        if(temporary_heal > 0){player.health += temporary_heal; temporary_heal--;
+            cout << "Z dočasného healu jste dostali " << temporary_heal+1 << " životů. \n";}
+        if(temporary_lifesteal>0){boss_health -= 5; player.health += 5; \
+        temporary_lifesteal--; cout << "Z dočasného lifestealu jste Bloomshade ubrali 5 životů a získali tím 5 životů. \n";}
+        if(temporary_damage > 0){damage = player.attack + temporary_damage; temporary_damage-=5;
+            cout << "Díky dočasnému zvýšení útoku nyní děláte " << temporary_damage+5+player.attack << " škody. \n";}
+        if (player.health > player.max_health){player.health = player.max_health;}
+        wait(speed * 1);
+        setColor("Yellow");
+        if(spell_immunity>0){setColor("Yellow"); cout << "V tomto tahu nelze používat manu. \n";}
+        setColor("Green");
+        cout << "-----\n";
+        cout << "Vaše životy: " << player.health << ", vaše mana: " << player.mana << ", váš útok: " << damage << endl;
+        cout << "Životy bosse: " << boss_health << endl;
+        if(player_stun <= 0){
+            for(int i=1; i<=player.number_of_abilities; i++){cout << i << ") " << player.abilities[i-1] << " ";}
+            cout << player.number_of_abilities+1 << ") Inventář ";
+            if(bloomHP > 0){setColor("Yellow"); cout << player.number_of_abilities+2 << ") Zaútočit na malý květ";}
+            cout << endl;
+            if(bloomHP > 0){number_of_choices = player.number_of_abilities+2;}else{number_of_choices = player.number_of_abilities+1;}
+            setColor("Black"); do{cout << "Jakou akci chcete udělat? "; get_int(choice);} while(choice < 1 || choice > number_of_choices);
+            choice--;
+        } else{choice = -1; setColor("Yellow"); player_stun--; cout << "Hráč je omráčen, toto kolo proto vynecháváte. \n";}
+        setColor("Cyan");
+        if(choice == -1){/* Nic */}
+
+        else if(choice == player.number_of_abilities+1){bloomHP -= damage; if(bloomHP<0){bloomHP=0;} cout << "Malému květu na \
+hráčovi jste ubrali " << damage << "životů. Nyní má " << bloomHP << " životů. \n";}
+        else if(choice == player.number_of_abilities){ inventar(player, "Nic"); damage = player.attack + temporary_damage; }
+        else if(player.abilities[choice] == "Normální útok"){
+                        boss_health -= damage;
+                        cout << "Minibossu jste ubrali " << damage << " životů. \n";
+                        lastAttack = 0; number_of_attacks++;
+        }
+        else if(player.abilities[choice] == "Hodně slabý heal" || player.abilities[choice] == "Slabý heal"){
+            player.health += actions[player.abilities[choice]][1];
+            cout << "Použili jste heal a zvedly se vám životy o " << actions[player.abilities[choice]][1] << endl;
+            if(player.health > player.max_health){player.health = player.max_health;}
+        }
+
+        else if(spell_immunity > 0){ setColor("Yellow"); cout << "V tomto kole nelze používat manu a proto vaše akce nic nedělá. Na tahu je Bloomshade. \n"; }
+        else if(player.abilities[choice] == "Silný heal" || player.abilities[choice] == "Hodně silný heal"){
+            if(actions[player.abilities[choice]][0] <= player.mana){
+                player.mana -= actions[player.abilities[choice]][0];
+                player.health += actions[player.abilities[choice]][1];
+                cout << "Použili jste heal a zvedly se vám životy o " << actions[player.abilities[choice]][1] << endl;
+                if(player.health > player.max_health){player.health = player.max_health;}
+            } else {setColor("Yellow"); cout << "Nemáte dostatek many na tuto akci. \n";}
+        }
+        else if(player.abilities[choice] == "Dočasné zvýšení útoku"){
+            if(actions["Dočasné zvýšení útoku"][0] <= player.mana){
+                player.mana -= actions["Dočasné zvýšení útoku"][0];
+                temporary_damage = 15; cout << "Dočasně jste navýšili svůj damage \n";
+            } else{setColor("Yellow"); cout << "Nemáte dostatek many \n";}}
+        else if(player.abilities[choice] == "Dočasný heal"){
+            if(actions["Dočasný heal"][0] <= player.mana){
+                player.mana -= actions["Dočasný heal"][0];
+                temporary_heal = 10; cout << "Dočasně se budete postupně healovat \n";
+            } else {setColor("Yellow"); cout << "Nemáte dostatek many \n";}
+        }
+        else if(player.abilities[choice] == "Dočasný lifesteal"){
+            if(actions["Dočasný lifesteal"][0] <= player.mana){
+                player.mana -= actions["Dočasný lifesteal"][0];
+                temporary_lifesteal = 7; cout << "Dočasně budete mít lifesteal \n";
+            } else{setColor("Yellow"); cout << "Nemáte dostatek many \n";}
+        }
+        else if(player.abilities[choice] == "Magický šíp"){
+            boss_health -= damage * 2;
+            cout << "Minibossu jste ubrali dvojnásobek svého útoku (" << damage*2 << ") životů. \n";
+            lastAttack = 0;
+        } else if(player.abilities[choice] == "% škody"){
+            if(actions[player.abilities[choice]][0] <= player.mana){
+                player.mana -= actions[player.abilities[choice]][0];
+                boss_health *= (1 - float(damage) / 100);
+                cout << "Ubrali jste Bloomshade " << float(damage) << "% životů. \n";
+                lastAttack = 0; number_of_attacks++;
+            } else{setColor("Yellow"); cout << "Nemáte dostatek many. \n";}
+        } else{
+            if(actions[player.abilities[choice]][0] <= player.mana){
+                player.mana -= actions[player.abilities[choice]][0];
+                player.health += actions[player.abilities[choice]][1];
+                boss_health -= actions[player.abilities[choice]][2];
+                cout << "Ubrali jste monstru " << actions[player.abilities[choice]][2] << " životů a \
+získali jste " << actions[player.abilities[choice]][1] << " životů. \n";
+                lastAttack = 0; number_of_attacks++;
+                if(player.health > player.max_health){player.health = player.max_health;}
+            } else{setColor("Yellow"); cout << "Nemáte dostatek many \n";}
+        }
+
+        if(spell_immunity>0){spell_immunity--;}
+
+        if(boss_health <= 0){return 1;}
         wait(speed * 1);
     }
 }
@@ -820,6 +1051,24 @@ void village(Player &player, int speed){
     }
 }
 
+// Check na level-up
+void new_level(Player &player, int speed){
+    int random_number;
+    if (player.experience / 10 > player.level){
+        for(int i=player.level; i<player.experience/10; i++){
+            player.level = player.experience / 10;
+            do {random_number = rand() % 3 + 1;} while(player.name == "Válečník" && random_number == 2); // 1 = max životy, 2 = max mana, 3 = útok
+            setColor("Cyan");
+            cout << "Nová úroveň! \n";
+            wait(speed * 1);
+            if(random_number == 1){player.max_health += 10; cout << "Max životy " << player.max_health-10 << " -> " << player.max_health << endl;}
+            else if(random_number == 2){player.max_mana += 15; cout << "Max mana " << player.max_mana-15 << " -> " << player.max_mana << endl;}
+            else if(random_number == 3){player.attack += 5; cout << "Útok " << player.attack-5 << " -> " << player.attack << endl;}
+            wait(speed * 1);
+        }
+    }
+}
+
 // Funkce na neúspěšné ukončení hry
 void game_over(Player player){
     setColor("Red");
@@ -829,6 +1078,7 @@ void game_over(Player player){
     cout << player.money << " peněz" << endl;
     cout << player.mana << " many" << endl;
     cout << player.attack << " úrovně útoku" << endl;
+    cout << player.level << ". úroveň a " << player.experience << " celkové zkušenosti" << endl;
 }
 
 int main(){
@@ -959,7 +1209,9 @@ Má decentní útok i manu. Životy: 100; Škody: 12; Mana: 90 \n";
         player.attack = Classes[choice][1];
         player.max_mana = Classes[choice][2];
         player.mana = player.max_mana;
-        player.money = 20;
+        player.money = 2000;
+        player.experience = 0;
+        player.level = 0;
         for(int i=0; i<5; i++){player.abilities[i] = class_abilities[choice][i];}
         player.number_of_abilities = Classes[choice][3];
         wait(speed * 2);
@@ -969,7 +1221,7 @@ Má decentní útok i manu. Životy: 100; Škody: 12; Mana: 90 \n";
         cin >>  choice;
 
         if (lower(choice) == "ano"){break;}
-    } 
+    }
 
     setColor("White");
     cout << "----------\n";
@@ -1005,6 +1257,8 @@ Monstra mají různé vlastnosti, avšak stále po vás budou útočit. \n";
 
     setColor("Cyan");
     number = rand() % 2 + 1;
+    player.experience += number * 5;
+    new_level(player, speed);
     if (number == 2){
         player.money += 15;
         cout << "Z jeskynní krysy jste získali 15 zlatých \n";
@@ -1035,22 +1289,22 @@ připomínající důl. Důl to opravduje je – opuštěný. Zde se může skr�
         number = rand() % 2 + 1;
         if(number == 1){
             cout << "V truhle jste našli elixír, tento item vám po použití zvýší útok o 5. \n";
-            inventar(player, "Elixír") == 1;
+            inventar(player, "Elixír");
         } else if(number == 2){
             cout << "V truhle jste našli magickou kouli, po použití tohoto itemu vám zvedne max manu o 15. \n";
-            inventar(player, "Magická koule") == 1;
+            inventar(player, "Magická koule");
         }
     } else if(number == 2){
         number = rand() % 3 + 1;
         if(number == 1){
             cout << "V truhle jste našli nápoj náhody. Když tento nápoj použijete, dostanete náhodný efekt. \n";
-            inventar(player, "Nápoj náhody") == 1;
+            inventar(player, "Nápoj náhody");
         } else if(number == 2){
             cout << "V truhle jste našli lektvar zdraví – tento nápoj vám přidá 10 životů k hodnotě max zdraví. \n";
-            inventar(player, "Lektvar zdraví") == 1;
+            inventar(player, "Lektvar zdraví");
         } else if(number == 3){
             cout << "V truhle jste našli lékárnu, tento item vám dodá 10 životů. \n";
-            inventar(player, "Lékárna") == 1;
+            inventar(player, "Lékárna");
         }
     }
     setColor("White");
@@ -1071,6 +1325,8 @@ připomínající důl. Důl to opravduje je – opuštěný. Zde se může skr�
 
     setColor("Cyan");
     number = rand() % 4 + 1;
+    player.experience += number * 2;
+    new_level(player, speed);
     if (number < 3){
         player.money += 20;
         cout << "Z trpaslíka jste získali 20 zlatých \n";
@@ -1098,13 +1354,15 @@ připomínající důl. Důl to opravduje je – opuštěný. Zde se může skr�
     player.money += 30;
     setColor("Cyan");
     number = rand() % 4 + 1;
+    player.experience += number * 3;
+    new_level(player, speed);
     if(number < 3){
         player.money += 30;
         cout << "Z netopýrů jste získali 30 zlatých. \n";
     }
     if(number == 1){
         cout << "Z netopýrů jste také získali dobíječ many. \n";
-        inventar(player, "Dobíječ many") == 1;
+        inventar(player, "Dobíječ many");
     }
     cout << "-----\n";
 
@@ -1138,7 +1396,9 @@ střetu s pavouky nevyhnete. Jdete proto jejich směrem a vidíte, že už tam j
     if(status == 0){game_over(player); return 0;}
     else{cout << "Boj s pavouky jste úspěšně zvládli, nyní můžete přes most přejít bez dalších potíží. \n";}
 
-    number = rand() % 4;
+    number = rand() % 4 + 1;
+    player.experience += number * 5;
+    new_level(player, speed);
     setColor("Cyan");
     if(number < 3){
         player.money += 40;
@@ -1180,6 +1440,8 @@ nimi bojovat. \n";
     wait(speed * 1);
     setColor("Cyan");
     number = rand() % 2 + 1;
+    player.experience += number * 4;
+    new_level(player, speed);
     if(number == 1){
         player.money += 10;
         cout << "Z tohoto boje jste si odnesli 10 zlatých. \n";
@@ -1215,6 +1477,8 @@ bohužel si vás ale všimnou. 'To je ten vězeň, že?' řekne strážný s me�
 
     setColor("Cyan");
     number = rand() % 4 + 1;
+    player.experience += number * 4;
+    new_level(player, speed);
     if(number < 3){
         player.money += 35;
         cout << "Ze strážců jste získali 35 zlatých. \n";
@@ -1222,7 +1486,7 @@ bohužel si vás ale všimnou. 'To je ten vězeň, že?' řekne strážný s me�
         cout << "Ze strážců jste získali elixír. \n";
         inventar(player, "Elixír");
     } else if(number == 4){
-        cout << "Ze stážců jste získali nápoj náhody. \n";
+        cout << "Ze strážců jste získali nápoj náhody. \n";
         inventar(player, "Nápoj náhody");
     }
 
@@ -1239,6 +1503,8 @@ Chtěl vás udeřit už podruhé, tentokrát neúspěšně. Chcete zdrhnout, on 
     if(status == 0){game_over(player); return 0;}
     else if(status == 1){cout << "Minibosse jste úspěšně porazili. Ne každému se toto podaří. \n";}
 
+    player.experience += 25;
+    new_level(player, speed);
     setColor("Cyan");
     player.money += 50;
     cout << "Z obra jste získali 50 zlatých. \n";
@@ -1260,7 +1526,9 @@ vydáte se proto tím směrem. Cestu vám ale překazí nepřátelský vlk. Asi 
     wait(speed * 1);
 
     setColor("Cyan");
-    number = rand() % 2;
+    number = rand() % 2 + 1;
+    player.experience += number * 5;
+    new_level(player, speed);
     if(number == 1){
         player.money += 10;
         cout << "Hráč z vlka získal 10 zlatých. \n";
@@ -1286,7 +1554,9 @@ Jeden je žlutý, druhý je modrý a ten poslední je červený. Než půjdete d
     else{setColor("White"); cout << "Motýly jste úspěšně porazili. \n";}
 
     setColor("Cyan");
-    number = rand() % 2;
+    number = rand() % 2 + 1;
+    player.experience += number * 7;
+    new_level(player, speed);
     if(number == 1){
         player.money += 30;
         cout << "Hráč získal 30 zlatých. \n";
@@ -1324,7 +1594,9 @@ Je to zvlášťní chování od této medvědice, ale nejspíš je budete také 
 
     wait(speed * 1);
     setColor("Cyan");
-    number = rand() % 2;
+    number = rand() % 2 + 1;
+    player.experience += number * 7;
+    new_level(player, speed);
     if(number == 1){player.money += 20; cout << "Z medvědů jste získali 20 zlatých. \n";}
 
     setColor("Black");
@@ -1341,6 +1613,8 @@ Musíte se tedy bránit. Pozor, jeden z lupičů má revolver. \n";
 
     setColor("Cyan");
     number = rand() % 2;
+    player.experience += number * 9;
+    new_level(player, speed);
     if(number == 1){player.money += 50; cout << "Z lupičů jste dostali 5O zlatých. \n";}
     cout << "Z lupičů jste dostali elixír, dobíječ many a lektvar života. \n";
     inventar(player, "Elixír");
@@ -1366,6 +1640,8 @@ Golem na vás mluví: 'Má práce je chránit tuto vesnici. Nikdo nepovolaný do
     if(status == 0){game_over(player); return 0;}
     else if(status == 1){setColor("White"); cout << "Golema jste úspěšně porazili, nyní rychle do vesnice! \n";}
 
+    player.experience += 25;
+    new_level(player, speed);
     setColor("Cyan");
     player.money += 50;
     cout << "Z golema jste získali 50 zlatých a nápoj náhody. \n";
@@ -1376,6 +1652,57 @@ Golem na vás mluví: 'Má práce je chránit tuto vesnici. Nikdo nepovolaný do
     cout << "Dorazili jste do vesnice. Dobře se připravte, nejspíš vás čeká poslední boj. \n";
     wait(speed * 1);
 
+    cout << "-----\n";
+    village(player, speed);
+    cout << "-----\n";
+
+    setColor("White");
+    cout << "Po návštěvě poslední vesnice jdete blíže k onomu otvoru vyzařující denní světlo. Jdete k němu a opravdu to vypadá, \
+že je to cesta ven. Jdete dál, a jeskyni už začíná pokrývat mechová vrstva s trávou. Nedaleko od vás se nachází hodně zajímavá kytka. \
+chytí vaši pozornost, a jdete si ji prohlédnout. \n";
+    wait(speed * 3);
+
+    cout << "Chcete se jí dotknout, ale";
+    wait(speed * 1);
+    for(int i=0; i<5; i++){
+        if(i==0){setColor("Yellow");}
+        else if(i==1){setColor("Green");}
+        else if(i==2){setColor("Red");}
+        else if(i==3){setColor("Blue");}
+        else if(i==4){setColor("Cyan");}
+        cout << ".";
+        wait(1);
+    }
+
+    setColor("Black");
+    cout << "\nKytka najednou vzroste. Ne o moc, nyní má ale stejnou výšku jako hráč. Kytka je dost možná poslední věc, která vám \
+brání v tom, abyste vyšli ven, a tak jí chcete porazit co nejrychleji. Ovšem nevíte, jaké další schopnosti skrývá... \n";
+
+    status = bossfight(player, actions, speed);
+    if(status == 0){game_over(player); return 0;}
+    
+    setColor("Green");
+    cout << "----------\n";
+    cout << "Porazili jste finálního bosse! Nyní můžete po dlouhé době vyjít z jeskyně bez dalších potíží. \n";
+    wait(speed * 2);
+
+    setColor("White");
+    cout << endl;
+    cout << "Jdete dál jeskynním otvorem. Trávy a mechu přibývá a dokonce už můžete zahlédnout samotné slunce. V této \
+jeskyni jste strávili mnohem víc času, než jste původně zamýšleli. To ale nevadí, jelikož už jste venku a nehrozí zde žádné nebezpečí. \n";
+
+    wait(speed * 3);
+    cout << endl << endl << endl;
+    setColor("Yellow");
+    cout << "Vyhráhli jste! \n";
+    cout << "Dosáhli jste " << player.level << ". úrovně a celkem jste nasbírali " << player.experience << " EXP" << endl;
+    cout << "Teď nějaké staty: \n";
+    cout << player.money << " peněz" << endl;
+    cout << player.mana << " many" << endl;
+    cout << player.max_mana << " max many" << endl;
+    cout << player.attack << " úrovně útoku" << endl;
+    cout << player.health << " životů" << endl;
+    cout << player.max_health << " max životů" << endl;
 
     return 0;
 }

@@ -168,7 +168,7 @@ void vypisInventar(string inventar[], int pocet){
 
 int inventar(Player &player, string pridat){
     string select, placeholder="Placeholder";
-    int akce, pocet=0, select_int;
+    int akce, pocet=10, select_int;
     bool running = true;
     for(int i=0; i<10; i++){if(player.inventory[i] == "Nic"){pocet=i; break;}} // Zjišťování počet itemů v inventáři
 
